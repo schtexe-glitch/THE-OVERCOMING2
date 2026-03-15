@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Overcoming - Breathing App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'VT323', monospace;
+            background-color: #0c090d; 
+            color: #fef3c7;
+        }
+
+        /* Animated GIF Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-image: url('https://i.pinimg.com/originals/70/0f/c1/700fc139196efa9b8d755e95b2dcbfc8.gif');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .app-layer {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #breath-screen {
+            justify-content: flex-start;
+            padding-top: 8vh;
+        }
+
+        .pixel-btn {
+            background: rgba(45, 27, 20, 0.9);
+            border: 6px solid #000;
+            box-shadow: 
+                inset -6px -6px 0px 0px #1a0f0a,
+                6px 6px 0px 0px rgba(0,0,0,0.6);
+            padding: 20px 40px;
+            font-size: 2.2rem;
+            color: #fbbf24;
+            transition: all 0.1s;
+            cursor: pointer;
+            text-shadow: 3px 3px 0px #000;
+            text-transform: uppercase;
+        }
+
+        .pixel-btn:hover {
+            background: #452a1e;
+            color: #fcd34d;
+            transform: scale(1.05);
+        }
+
+        .breath-orb {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px auto;
+            transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1), background 4s ease-in-out;
+            position: relative;
+            z-index: 100; 
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.8) 0%, rgba(217, 119, 6, 0.4) 60%, transparent 90%);
+            box-shadow: 0 0 80px rgba(251, 191, 36, 0.3);
+        }
+
+        .text-overlay-bg {
+            background: rgba(12, 9, 13, 0.85);
+            padding: 10px 30px;
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0 rgba(251, 191, 36, 0.2);
+            margin-bottom: 20px;
+            z-index: 101;
+        }
+
+        .reflection-card {
+            background: rgba(26, 15, 10, 0.95);
+            border: 4px solid #fbbf24;
+            padding: 20px;
+            max-width: 420px;
+            margin: 20px auto;
+            color: #fef3c7;
+            font-size: 1.5rem;
+            line-height: 1.4;
+            box-shadow: 8px 8px 0 #000;
+        }
+
+        .floating-companion {
+            position: absolute;
+            top: 50%; 
+            left: 10%;
+            z-index: 200; 
+            transition: left 5s ease-in-out, top 5s ease-in-out;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .companion-bubble {
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            padding: 6px 12px;
+            font-size: 1.2rem;
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+            max-width: 140px;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        .companion-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px 6px 0;
+            border-style: solid;
+            border-color: #000 transparent;
+        }
+
+        .companion-wrapper {
+            display: block;
+            animation: floatBob 3s ease-in-out infinite;
+        }
+
+        .floating-companion img {
+            width: 100px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        @keyframes floatBob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="animated-bg"></div>
+    <div class="bg-overlay"></div>
+
+    <audio id="bg-music" loop>
+        <source src="http://googleusercontent.com/file_content/1" type="audio/mpeg">
+    </audio>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="app-layer">
+        <h1 class="text-7xl mb-12 tracking-[0.2em] text-amber-400 font-bold" style="text-shadow: 6px 6px 0px #000;">THE OVERCOMING</h1>
+        <button class="pixel-btn" id="start-btn" onclick="startApp()">BEGIN ASCENT</button>
+        <p class="mt-4 text-amber-100 opacity-90 font-bold" style="text-shadow: 2px 2px #000;">Stillness is the ultimate conquest.</p>
+    </div>
+
+    <!-- Breathing Screen -->
+    <div id="breath-screen" class="app-layer hidden">
+        <div id="timer" class="text-6xl mb-6 text-amber-200" style="text-shadow: 4px 4px 0 #000">60</div>
+        
+        <div class="text-overlay-bg">
+            <div id="instruction" class="text-4xl uppercase tracking-widest text-amber-50">Focus on the light</div>
+        </div>
+        
+        <div class="breath-orb" id="visualizer">
+            <span id="sub-timer" class="text-4xl font-bold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5)">4</span>
+        </div>
+
+        <div class="floating-companion" id="floating-companion">
+            <div class="companion-bubble" id="companion-quote">Breathe...</div>
+            <div class="companion-wrapper">
+                <img id="companion-img" src="https://i.ibb.co/99gdnzTk/SONGOKU.png" alt="Companion">
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div id="success-screen" class="app-layer hidden">
+        <h2 class="text-6xl mb-4 text-amber-400" style="text-shadow: 4px 4px 0 #000">CONQUERED</h2>
+        <div id="reflection-area" class="reflection-card hidden"></div>
+        
+        <div class="flex flex-col gap-4 mt-6">
+            <button id="reflect-btn" class="pixel-btn text-2xl" onclick="generateReflection()">
+                ✨ Come Back Whenever You Want ✨
+            </button>
+            <button class="pixel-btn text-2xl" onclick="location.reload()">RETURN TO REST</button>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let timeLeft = 60;
+        let breathState = 0; 
+        let breathTimer = 4;
+        let timerInterval;
+        let audioCtx;
+
+        const gokuQuotes = [
+            "Keep going!", "You got this!", "Beyond limits!", "Stay focused!",
+            "Find your power!", "Don't give up!", "Inner peace!", "Be strong!",
+            "Believe!", "Push past it!"
+        ];
+
+        function playEndRinger() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            // Synthesize a resonant bell/chime sound
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(880, now); // A5
+            osc1.frequency.exponentialRampToValueAtTime(440, now + 1.5);
+
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1320, now); // E6
+            osc2.frequency.exponentialRampToValueAtTime(660, now + 1.5);
+
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 2);
+
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 2);
+            osc2.stop(now + 2);
+        }
+
+        function startWaterFlow() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const bufferSize = audioCtx.sampleRate * 2;
+            const brownNoiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = brownNoiseBuffer.getChannelData(0);
+            let lastOut = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                output[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = output[i];
+                output[i] *= 3.5; 
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = brownNoiseBuffer;
+            noise.loop = true;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 400; 
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.08; 
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        async function geminiCall(prompt, systemInstruction = "") {
+            let retries = 0;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            while (retries < 5) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined
+                        })
+                    });
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, delays[retries]));
+                    retries++;
+                }
+            }
+            return null;
+        }
+
+        async function generateReflection() {
+            const btn = document.getElementById('reflect-btn');
+            const area = document.getElementById('reflection-area');
+            btn.disabled = true;
+            area.classList.remove('hidden');
+            area.innerHTML = '<span>Consulting the embers...</span>';
+            const reflection = await geminiCall(
+                "Write a short, poetic observation about inner strength and a quiet mind. Max 40 words.",
+                "You are a wise spirit of the peaks."
+            );
+            area.innerText = reflection || "The shadows grow long, but the light within remains steady.";
+        }
+
+        function startApp() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('breath-screen').classList.remove('hidden');
+            const music = document.getElementById('bg-music');
+            music.play().catch(e => console.log("Audio playback failed:", e));
+            startWaterFlow();
+            startTimers();
+            moveCompanion();
+            cycleCompanionQuotes();
+        }
+
+        function cycleCompanionQuotes() {
+            const el = document.getElementById('companion-quote');
+            setInterval(() => {
+                const randomQuote = gokuQuotes[Math.floor(Math.random() * gokuQuotes.length)];
+                el.innerText = randomQuote;
+            }, 8000);
+        }
+
+        function moveCompanion() {
+            const container = document.getElementById('floating-companion');
+            const img = document.getElementById('companion-img');
+            let isOnRight = false;
+
+            setInterval(() => {
+                isOnRight = !isOnRight;
+                const sideRange = isOnRight ? (Math.random() * 10 + 80) : (Math.random() * 10 + 5);
+                const randomY = Math.floor(Math.random() * 25) + 45; 
+                
+                if (isOnRight) {
+                    img.style.transform = "scaleX(-1)";
+                } else {
+                    img.style.transform = "scaleX(1)";
+                }
+
+                container.style.left = sideRange + "%";
+                container.style.top = randomY + "%";
+            }, 5000);
+        }
+
+        function startTimers() {
+            const timerEl = document.getElementById('timer');
+            const instEl = document.getElementById('instruction');
+            const subEl = document.getElementById('sub-timer');
+            const viz = document.getElementById('visualizer');
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                breathTimer--;
+                if (breathTimer <= 0) {
+                    breathState = (breathState + 1) % 3;
+                    breathTimer = 4;
+                    updateBreathingUI(instEl, viz);
+                }
+                subEl.innerText = breathTimer;
+                if (timeLeft <= 0) endSession();
+            }, 1000);
+            updateBreathingUI(instEl, viz);
+        }
+
+        function updateBreathingUI(inst, viz) {
+            if (breathState === 0) {
+                inst.innerText = "Inhale Deeply...";
+                viz.style.transform = "scale(1.7)";
+            } else if (breathState === 1) {
+                inst.innerText = "Hold your Breath...";
+            } else {
+                inst.innerText = "Let it out slowly...";
+                viz.style.transform = "scale(0.8)";
+            }
+        }
+
+        function endSession() {
+            clearInterval(timerInterval);
+            playEndRinger(); // Ring the bell when time is up
+            document.getElementById('breath-screen').classList.add('hidden');
+            document.getElementById('success-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
