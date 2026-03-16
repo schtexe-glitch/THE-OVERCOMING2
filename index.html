@@ -299,8 +299,9 @@
             <button class="pixel-btn unravel-btn" id="unravel-trigger" onclick="unravelQuest()">UNRAVEL</button>
         </div>
 
+        <!-- Quest Navigation Below Scroll -->
         <div id="active-quest-controls" class="mt-8 hidden">
-             <button class="pixel-btn text-xl" onclick="triggerCompletionModal()">Quest completed</button>
+            <button class="pixel-btn text-xl" onclick="triggerCompletionModal('QUEST COMPLETED')">Quest completed</button>
         </div>
 
         <!-- Penalty Scroll (Visible only on failure) -->
@@ -424,7 +425,7 @@
         }
 
         function skipTimer() {
-            totalSeconds = 1; // Set to 1 so the next tick triggers the modal
+            totalSeconds = 1; // Instant skip to the end of the tick
         }
 
         function triggerCompletionModal(headerText = "ACHIEVEMENT") {
@@ -442,6 +443,7 @@
             document.getElementById('modal-overlay').style.display = 'none';
             document.getElementById('session-timer').innerText = "QUEST CONQUERED";
             document.getElementById('return-home-btn').classList.remove('hidden');
+            document.getElementById('quest-scroll').classList.add('hidden'); // Clean up scroll
         }
 
         function claimFailure() {
