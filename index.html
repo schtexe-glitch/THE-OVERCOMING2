@@ -361,7 +361,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 50;
+            z-index: 1000;
         }
 
         .info-content {
@@ -379,7 +379,6 @@
     <div class="animated-bg"></div>
     <div class="bg-overlay"></div>
 
-    <!-- Replaced music controls with Info button -->
     <div class="controls-top-right">
         <button class="pixel-circle-btn" onclick="toggleInfo()">
             <span>i</span>
@@ -407,7 +406,7 @@
             </div>
             <div class="stat-row">
                 <div class="stat-label"><span>STAM</span> <span id="stam-val">LV. 0</span></div>
-                <div class="bar-bg"><div id="stam-bar" class="bar-fill bg-blue-500)</div></div>
+                <div class="bar-bg"><div id="stam-bar" class="bar-fill bg-blue-500"></div></div>
             </div>
             <div class="stat-row">
                 <div class="stat-label"><span>FOCUS</span> <span id="focus-val">LV. 0</span></div>
@@ -453,7 +452,6 @@
         </div>
     </div>
 
-    <!-- Info Overlay -->
     <div id="info-overlay">
         <div class="info-content">
             <h2 class="text-3xl text-amber-400 mb-4 border-b-2 border-amber-900 pb-2">THE PROTOCOL</h2>
@@ -526,19 +524,21 @@
         }
 
         function playCoinSound() {
-            if (!audioCtx) initAudio();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime);
-            osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.4);
+            try {
+                if (!audioCtx) initAudio();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(987.77, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e) { console.log("Audio not supported yet."); }
         }
 
         function toggleInfo() {
@@ -576,28 +576,37 @@
                 const xp = stats[type] || 0;
                 const level = Math.floor(xp / LVL_THRESHOLD);
                 const progress = ((xp % LVL_THRESHOLD) / LVL_THRESHOLD) * 100;
-                document.getElementById(`${type}-val`).innerText = `LV. ${level}`;
-                document.getElementById(`${type}-bar`).style.width = `${progress}%`;
+                
+                const valEl = document.getElementById(`${type}-val`);
+                const barEl = document.getElementById(`${type}-bar`);
+                
+                if (valEl) valEl.innerText = `LV. ${level}`;
+                if (barEl) barEl.style.width = `${progress}%`;
             });
             localStorage.setItem('overcoming_stats', JSON.stringify(stats));
         }
 
         function startApp() {
-            initAudio();
+            // Start process
             document.getElementById('home-screen').classList.add('hidden');
             document.getElementById('quest-screen').classList.remove('hidden');
             updateStatUI(); 
             moveCompanion();
             cycleQuotes();
+            try { initAudio(); } catch(e) {}
         }
 
         function startTimer() {
+            if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 totalSeconds--;
+                if (totalSeconds < 0) {
+                    triggerCompletionModal("TIME ELAPSED");
+                    return;
+                }
                 const m = Math.floor(totalSeconds / 60);
                 const s = totalSeconds % 60;
                 document.getElementById('session-timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-                if (totalSeconds <= 0) triggerCompletionModal("TIME ELAPSED");
             }, 1000);
         }
 
@@ -663,7 +672,10 @@
             setInterval(update, 12000);
         }
 
-        updateStatUI();
+        // Initialize display on load
+        window.onload = () => {
+            updateStatUI();
+        };
     </script>
 </body>
 </html>
